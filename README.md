@@ -1,14 +1,15 @@
 #🛍️ GRAÇA PRESENTES - Sistema de Vendas e Estoque
+
 🚀 _Sistema integrado com back-end e frontend mobile (Flet)_
 
-<div align="center">
+<p align="center">
 https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
 https://img.shields.io/badge/Flet-0078D4?style=for-the-badge&logo=flutter&logoColor=white
 https://img.shields.io/badge/Mobile-APP-FF6B6B?style=for-the-badge
 
 Sistema completo de gerenciamento de vendas e estoque para dispositivos móveis
 
-</div>
+</p>
 
 
 
