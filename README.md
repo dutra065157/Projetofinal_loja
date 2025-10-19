@@ -1,15 +1,20 @@
-# 📱 + 🌐 APP Mobile & REST API 
-**Desenvolvido com Python, Django e Flet**  
-🚀 _Sistema integrado com frontend mobile (Flet) e backend API (Django REST Framework)_
+# Graça Presentes
+**Sistema de vendas e estoque **  
+🚀 _Sistema integrado com frontend mobile (Flet)_
 
 
- ![Tela do App](https://github.com/dutra065157/APP-Mobile-REST-API-para-Gestao-de-Alunos/blob/b08d787a1485e4f9eb2ec44d75c616e785c3dd2d/assets/image1.png)
 
 
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003701.png)
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003842.png)
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004036.png)
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004215.png)
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004301.png)
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004504.png)
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004602.png)
-![Tela do App](assets/image3.png)
-![Tela do App](assets/image4.png)
-![Tela do App](assets/image5.png)
+
+
+
 
 
 
