@@ -3,6 +3,10 @@
 🚀 _Sistema integrado com back-end e frontend mobile (Flet)_
 
 <p align="center">
+   <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
+   <img src="https://img.shields.io/badge/Flet-0078D4?style=for-the-badge&logo=flutter&logoColor=white">
+
+
 https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white
 https://img.shields.io/badge/Flet-0078D4?style=for-the-badge&logo=flutter&logoColor=white
 https://img.shields.io/badge/Mobile-APP-FF6B6B?style=for-the-badge
