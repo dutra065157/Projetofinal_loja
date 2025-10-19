@@ -12,9 +12,12 @@ Sistema completo de gerenciamento de vendas e estoque para dispositivos móveis
 </p>
 
 📱 Sobre o Projeto
-O GRAÇA PRESENTES é um aplicativo mobile desenvolvido em Python para gerenciamento completo de uma loja de presentes. O sistema oferece controle de vendas, estoque, cadastro de produtos e relatórios detalhados em uma interface intuitiva e moderna.
+
+O GRAÇA PRESENTES é um aplicativo mobile desenvolvido em Python para gerenciamento completo de uma loja de presentes.
+O sistema oferece controle de vendas, estoque, cadastro de produtos e relatórios detalhados em uma interface intuitiva e moderna.
 
 ✨ Características Principais
+
 🎯 Aplicativo Mobile Nativo
 
 💰 Sistema Completo de Vendas
@@ -27,36 +30,31 @@ O GRAÇA PRESENTES é um aplicativo mobile desenvolvido em Python para gerenciam
 
 📋 Relatórios Detalhados
 
-🛠️ Tecnologias Utilizadas
-Tecnologia	Função
-Python	Linguagem principal
-Flet	Framework para interface mobile
-Pandas	Análise e processamento de dados
-PyInstaller	Empacotamento do aplicativo
-
-
-
-
-
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003701.png)
 
 📋 Funcionalidades
+
 🛒 Sistema de Vendas
-Carrinho de Compras com seleção de produtos
-
-Cálculo automático de valores e totais
-
-Sistema de troco para pagamento em dinheiro
-
+Carrinho de Compras com seleção de produtos,  Cálculo automático de valores e totais,  Sistema de troco para pagamento em dinheiro,
 Finalização de compra com atualização automática do estoque
 
-Múltiplas formas de pagamento
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003842.png)
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004036.png)
+📦 Gestão de Produtos
+Cadastro completo de produtos (código, nome, preço, estoque, categoria), Busca e seleção de produtos
+Exibição de imagens dos produtos, Listagem de produtos cadastrados
+
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004215.png)
+
+
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004301.png)
+
+📈 Relatórios
+Vendas por data específica, Relatório por produto com quantidades vendidas, Total de produtos vendidos por período
+Análise de desempenho por categoria
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004504.png)
+
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004602.png)
 
 
@@ -79,44 +77,25 @@ Múltiplas formas de pagamento
   
 </p>
 
----
+💾 Funcionalidades Técnicas
+ Banco de Dados
+- Armazenamento em arquivos CSV
+- Sincronização em tempo real
+- Backup automático de dados
+  
+Interface
 
-## 🚀 Funcionalidades Principais
-- **📱 App Mobile (Flet)**  
-  - Interface multiplataforma (iOS/Android/Web)  
-  - Autenticação de usuários  
-  - Integração com API REST  
-  - Interface personalizada com widgets Flet  
+- Design responsivo para mobile
+- Navegação intuitiva entre telas
+- Feedback visual imediato
 
-- **🌐 Backend (Django REST)**  
-  - API RESTful com DRF (Django REST Framework)  
-  - Banco de dados SQLite (ou PostgreSQL em produção)  
-  - Rotas para CRUD de usuários/dados  
-  - Documentação automática (Swagger/Redoc)  
+Business Logic
 
----
+- Atualização automática do estoque
+- Cálculo preciso de valores e trocos
+- Validação de dados de entrada
 
-## 🛠️ Tecnologias  
-### **Backend**  
-🐍 `Python 3.11` | 🎸 `Django 5.0` | 🔧 `Django REST Framework` | 🗃️ `SQLite`  
-
-### **Frontend Mobile**  
-🎨 `Flet` | 📡 `Requests` | 🔄 `Async/Await`  
-
-### **Bibliotecas**  
-```python
-# Backend
-django-cors-headers  # CORS
-drf-yasg             # Documentação da API
-python-decouple      # Variáveis de ambiente
-
-# Mobile
-flet                 # UI/UX
-requests             # Chamadas HTTP
-httpx                # APIs Async
-
-
-
+ 
 
 
 
