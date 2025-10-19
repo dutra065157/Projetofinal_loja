@@ -11,11 +11,48 @@ Sistema completo de gerenciamento de vendas e estoque para dispositivos móveis
 
 </p>
 
+📱 Sobre o Projeto
+O GRAÇA PRESENTES é um aplicativo mobile desenvolvido em Python para gerenciamento completo de uma loja de presentes. O sistema oferece controle de vendas, estoque, cadastro de produtos e relatórios detalhados em uma interface intuitiva e moderna.
+
+✨ Características Principais
+🎯 Aplicativo Mobile Nativo
+
+💰 Sistema Completo de Vendas
+
+📊 Controle de Estoque em Tempo Real
+
+📈 Dashboard com Analytics
+
+🏷️ Cadastro de Produtos com Imagens
+
+📋 Relatórios Detalhados
+
+🛠️ Tecnologias Utilizadas
+Tecnologia	Função
+Python	Linguagem principal
+Flet	Framework para interface mobile
+Pandas	Análise e processamento de dados
+PyInstaller	Empacotamento do aplicativo
+
+
 
 
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003701.png)
+
+📋 Funcionalidades
+🛒 Sistema de Vendas
+Carrinho de Compras com seleção de produtos
+
+Cálculo automático de valores e totais
+
+Sistema de troco para pagamento em dinheiro
+
+Finalização de compra com atualização automática do estoque
+
+Múltiplas formas de pagamento
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003842.png)
+
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004036.png)
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004215.png)
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004301.png)
