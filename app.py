@@ -1,0 +1,1342 @@
+import flet as ft
+import sqlite3
+from datetime import datetime
+import asyncio
+import traceback
+import pandas as pd
+from datetime import date
+from relatorio import *
+from database import *
+from relatorio import DashboardGraficos  # Importa a nova classe
+
+
+# ==============================================================
+# FUNÇÕES AUXILIARES E ESTADO DA APLICAÇÃO
+# ==============================================================
+
+
+class AppState:
+    """Classe para gerenciar o estado da aplicação"""
+
+    def __init__(self):
+        self.carrinho = []
+        self.produto_editando = None
+        self.uploaded_image_path = None
+        self.dashboard = None  # Será inicializado depois
+
+
+def mostrar_mensagem(page, texto, cor=ft.Colors.GREEN):
+    """Exibe uma mensagem temporária na interface"""
+    page.snack_bar = ft.SnackBar(
+        content=ft.Text(texto, color=cor),
+        bgcolor=ft.Colors.GREY_900 if page.theme_mode == ft.ThemeMode.DARK else ft.Colors.WHITE,
+        behavior=ft.SnackBarBehavior.FLOATING
+    )
+    page.snack_bar.open = True
+    page.update()
+
+
+def confirmar_acao(page, mensagem, callback):
+    """Exibe um diálogo de confirmação para ações críticas"""
+    def fechar_dialogo(e):
+        dialogo.open = False
+        page.update()
+
+    def confirmar(e):
+        callback()
+        fechar_dialogo(e)
+
+    dialogo = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Confirmação"),
+        content=ft.Text(mensagem),
+        actions=[
+            ft.TextButton("Sim", on_click=confirmar),
+            ft.TextButton("Não", on_click=fechar_dialogo),
+        ],
+        actions_alignment=ft.MainAxisAlignment.END
+    )
+
+    page.dialog = dialogo
+    dialogo.open = True
+    page.update()
+
+
+# ==============================================================
+# FUNÇÕES PRINCIPAIS DA APLICAÇÃO
+# ==============================================================
+
+def main(page: ft.Page):
+    # Configuração inicial da página
+    page.title = "Graça Presentes "
+
+    page.window.maximized = True
+    page.padding = 20
+    page.theme_mode = ft.ThemeMode.LIGHT
+    page.scroll = ft.ScrollMode.AUTO
+    page.fonts = {
+        "Poppins": "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+    }
+    page.theme = ft.Theme(font_family="Poppins")
+
+    # Inicialização do estado da aplicação
+    state = AppState()
+    state.dashboard = DashboardGraficos(page)  # Inicializa o dashboard
+
+    # ==============================================================
+    # COMPONENTES DE INTERFACE
+    # ==============================================================
+
+    # Elementos de imagem
+    image_preview = ft.Image(
+        width=300,
+        height=200,
+        fit=ft.ImageFit.CONTAIN,
+        border_radius=ft.border_radius.all(10),
+        visible=False
+    )
+
+    busca_image_preview = ft.Image(
+        width=300,
+        height=300,
+        fit=ft.ImageFit.CONTAIN,
+        border_radius=ft.border_radius.all(10),
+        visible=False
+    )
+
+    # FilePicker para seleção de imagens
+
+    def on_files_selected(e: ft.FilePickerResultEvent):
+        if e.files:
+            selected_file = e.files[0]
+            state.uploaded_image_path = selected_file.path
+            image_preview.src = state.uploaded_image_path
+            image_preview.visible = True
+        else:
+            state.uploaded_image_path = None
+            image_preview.visible = False
+        page.update()
+
+    file_picker = ft.FilePicker(on_result=on_files_selected)
+    page.overlay.append(file_picker)
+
+    def pick_files(e):
+        file_picker.pick_files(allow_multiple=False)
+
+    # ==============================================================
+    # FUNÇÕES DE ATUALIZAÇÃO DE INTERFACE
+    # ==============================================================
+
+    def calcular_troco(e):
+        """Calcula o troco para pagamentos em dinheiro"""
+        try:
+            total = sum(item['subtotal'] for item in state.carrinho)
+            valor = float(valor_recebido.value)
+
+            if valor >= total:
+                troco.value = f"Troco: R$ {valor - total:.2f}"
+                troco.visible = True
+            else:
+                troco.value = "Valor insuficiente!"
+                troco.color = ft.Colors.RED
+                troco.visible = True
+        except ValueError:
+            troco.visible = False
+        page.update()
+
+    def atualizar_forma_pagamento(e):
+        """Mostra/oculta campos de pagamento conforme a forma selecionada"""
+        valor_recebido.visible = (forma_pagamento.value == "dinheiro")
+        troco.visible = False
+        page.update()
+
+    def atualizar_tabela_produtos(filtro=None):
+        """Atualiza a tabela de produtos com dados do banco"""
+        produtos = buscar_produtos_db(filtro)
+
+        tabela_produtos.rows = [
+            ft.DataRow(
+                cells=[
+                    ft.DataCell(ft.Text(p[0], weight=ft.FontWeight.BOLD)),
+                    ft.DataCell(ft.Text(p[1])),
+                    ft.DataCell(
+                        ft.Text(f"R$ {p[2]:.2f}", color=ft.Colors.GREEN)),
+                    ft.DataCell(ft.Text(str(p[3]),
+                                        color=ft.Colors.RED if p[3] < 5 else ft.Colors.BLACK)),
+                    ft.DataCell(ft.Text(p[4].capitalize(),
+                                        color=ft.Colors.BLUE_700)),
+                    ft.DataCell(
+                        ft.Row([
+                            ft.IconButton(
+                                ft.Icons.REMOVE_RED_EYE,
+                                icon_color=ft.Colors.BLUE_700,
+                                tooltip="Visualizar",
+                                on_click=lambda e, cod=p[0]: mostrar_modal_produto(
+                                    cod)
+                            ),
+                            ft.IconButton(
+                                ft.Icons.DELETE,
+                                icon_color=ft.Colors.RED_700,
+                                tooltip="Excluir",
+                                on_click=lambda e, cod=p[0]: confirmar_exclusao(
+                                    cod)
+                            ),
+                        ], spacing=5)
+                    ),
+                ],
+                on_select_changed=lambda e, cod=p[0]: selecionar_produto(cod),
+                color=ft.Colors.GREY_100 if idx % 2 == 0 else None
+            ) for idx, p in enumerate(produtos)
+        ]
+
+        if not produtos:
+            tabela_produtos.rows = [
+                ft.DataRow(
+                    cells=[
+                        ft.DataCell(
+                            ft.Text("Nenhum produto cadastrado", italic=True)),
+                        *[ft.DataCell(ft.Text("")) for _ in range(5)]
+                    ]
+                )
+            ]
+        page.update()
+
+    def atualizar_seletor_produtos():
+        """Atualiza o dropdown de seleção de produtos"""
+        produtos = buscar_produtos_db()
+        seletor_produto.options = [
+            ft.dropdown.Option(
+                p[0],
+                f"{p[1]} (R$ {p[2]:.2f})"
+            ) for p in produtos
+        ]
+        page.update()
+
+    def limpar_formulario(e=None):
+        """Limpa o formulário de cadastro de produtos"""
+        state.produto_editando = None
+        state.uploaded_image_path = None
+        codigo_produto.value = ""
+        nome_produto.value = ""
+        preco_produto.value = ""
+        quantidade_produto.value = ""
+        categoria_produto.value = ""
+        descricao_produto.value = ""
+        image_preview.visible = False
+        codigo_produto.focus()
+        page.update()
+
+    async def cadastrar_produto(e):
+
+        campos_obrigatorios = [codigo_produto,
+                               nome_produto, preco_produto, quantidade_produto]
+
+        # Verifica se algum campo está vazio
+        campos_vazios = [campo for campo in campos_obrigatorios
+                         if not campo.value or str(campo.value).strip() == ""]
+
+        if campos_vazios:  # Se HÁ campos vazios
+            ms1 = "Preencha todos os campos obrigatórios!"
+            nao_salva.value = ms1
+            nao_salva.color = ft.Colors.RED
+            nao_salva.visible = True
+            nao_salva.update()
+
+            # Destacar os campos vazios
+            for campo in campos_obrigatorios:
+                if not campo.value or str(campo.value).strip() == "":
+                    campo.border_color = ft.Colors.RED  # Borda vermelha
+                else:
+                    campo.border_color = ft.Colors.GREY_400  # Borda normal
+            page.update()
+
+            # Espera 5 segundos e esconde a mensagem E remove bordas vermelhas
+            await asyncio.sleep(5)
+            nao_salva.visible = False
+            # REMOVER BORDAS VERMELHAS após 5 segundos
+            for campo in campos_obrigatorios:
+                campo.border_color = ft.Colors.GREY_400  # Volta para cor normal
+            page.update()
+            return
+
+        # Resetar mensagem de erro se existir
+        nao_salva.visible = False
+        nao_salva.update()
+
+        try:
+            produto = {
+                'codigo': codigo_produto.value.strip(),
+                'nome': nome_produto.value.strip(),
+                'preco': float(preco_produto.value),
+                'quantidade': int(quantidade_produto.value),
+                'categoria': categoria_produto.value if categoria_produto.value else "outros",
+                'descricao': descricao_produto.value.strip() if descricao_produto.value else "",
+                'image_path': state.uploaded_image_path
+            }
+
+            salvar_produto_db(produto)
+            limpar_formulario()
+            atualizar_tabela_produtos()
+            atualizar_seletor_produtos()
+
+            ms2 = "✅ Produto salvo com sucesso!"
+            success_salvar_text.value = ms2
+
+            page.update()
+
+            # Limpa mensagem após 5 segundos
+
+            async def clear_success():
+                await asyncio.sleep(5)
+                success_salvar_text.value = ""
+                page.update()
+            page.run_task(clear_success)
+
+        except ValueError:
+            mostrar_mensagem(
+                page, "Preço e quantidade devem ser números válidos!", ft.Colors.RED)
+
+    def selecionar_produto(codigo):
+        """Preenche o formulário com dados de um produto existente"""
+        produto = buscar_produto_db(codigo)
+        if produto:
+            codigo_produto.value = produto[0]
+            nome_produto.value = produto[1]
+            preco_produto.value = str(produto[2])
+            quantidade_produto.value = str(produto[3])
+            categoria_produto.value = produto[4]
+            descricao_produto.value = produto[5]
+
+            if produto[7]:
+                state.uploaded_image_path = produto[7]
+                image_preview.src = state.uploaded_image_path
+                image_preview.visible = True
+            else:
+                state.uploaded_image_path = None
+                image_preview.visible = False
+
+            page.update()
+
+    # ==============================================================
+    # MODAL DE DETALHES DO PRODUTO
+    # ==============================================================
+
+    modal_codigo = ft.Text()
+    modal_nome = ft.Text()
+    modal_preco = ft.Text()
+    modal_estoque = ft.Text()
+    modal_categoria = ft.Text()
+    modal_descricao = ft.Text()
+    modal_image = ft.Image(
+        width=200,
+        height=150,
+        fit=ft.ImageFit.CONTAIN,
+        border_radius=ft.border_radius.all(5),
+        visible=False
+    )
+
+    def mostrar_modal_produto(codigo):
+        """Exibe modal com detalhes do produto"""
+        produto = buscar_produto_db(codigo)
+        if produto:
+            modal_codigo.value = produto[0]
+            modal_nome.value = produto[1]
+            modal_preco.value = f"R$ {produto[2]:.2f}"
+            modal_estoque.value = str(produto[3])
+            modal_categoria.value = produto[4].capitalize()
+            modal_descricao.value = produto[5] or "Nenhuma descrição"
+
+            if produto[7]:
+                modal_image.src = produto[7]
+                modal_image.visible = True
+            else:
+                modal_image.visible = False
+
+            page.dialog = modal_produto
+            modal_produto.open = True
+            page.update()
+
+    def fechar_modal():
+        modal_produto.open = False
+        page.update()
+
+    def editar_produto_modal():
+        """Preenche formulário com produto do modal"""
+        codigo = modal_codigo.value
+        selecionar_produto(codigo)
+        fechar_modal()
+        codigo_produto.focus()
+
+    def confirmar_exclusao(codigo):
+        """Confirma exclusão de produto"""
+        def excluir():
+            excluir_produto_db(codigo)
+            mostrar_mensagem(page, "🗑️ Produto excluído com sucesso!")
+            atualizar_tabela_produtos()
+            atualizar_seletor_produtos()
+
+        confirmar_acao(
+            page, "Tem certeza que deseja excluir este produto?", excluir)
+
+    # ==============================================================
+    # FUNÇÕES DE BUSCA
+    # ==============================================================
+
+    def buscar_produto(e=None):
+        """Realiza busca de produtos no banco de dados"""
+        filtro = campo_busca.value.strip()
+        produtos = buscar_produtos_db(filtro if filtro else None)
+
+        busca_image_preview.visible = False
+
+        resultados_busca.controls = [
+            ft.ListTile(
+                leading=ft.Icon(ft.Icons.INVENTORY_2,
+                                color=ft.Colors.BLUE_700),
+                title=ft.Text(p[1], weight=ft.FontWeight.BOLD),
+                subtitle=ft.Text(
+                    f"Código: {p[0]} | Preço: R$ {p[2]:.2f} | Estoque: {p[3]}"),
+                on_click=lambda e, p=p: selecionar_produto_busca(p),
+            ) for p in produtos
+        ]
+
+        if not produtos:
+            resultados_busca.controls = [
+                ft.ListTile(
+                    leading=ft.Icon(ft.Icons.SEARCH_OFF),
+                    title=ft.Text("Nenhum produto encontrado", italic=True),
+                )
+            ]
+
+        page.update()
+
+    def selecionar_produto_busca(produto):
+        """Mostra imagem do produto na busca"""
+        if produto[7]:  # Índice 7 é o caminho da imagem
+            busca_image_preview.src = produto[7]
+            busca_image_preview.visible = True
+        else:
+            busca_image_preview.visible = False
+        page.update()  # Atualiza a página para exibir a imagem
+
+    # ==============================================================
+    # FUNÇÕES DO CARRINHO
+    # ==============================================================
+
+    def adicionar_ao_carrinho(e):
+        """Adiciona produto ao carrinho de compras"""
+        codigo = seletor_produto.value
+        if not codigo:
+            mostrar_mensagem(page, "Selecione um produto", ft.Colors.RED)
+            return
+
+        try:
+            quantidade = int(quantidade_compra.value)
+            if quantidade <= 0:
+                mostrar_mensagem(
+                    page, "Quantidade deve ser maior que zero", ft.Colors.RED)
+                return
+        except ValueError:
+            mostrar_mensagem(page, "Quantidade inválida", ft.Colors.RED)
+            return
+
+        produto = buscar_produto_db(codigo)
+        if not produto:
+            mostrar_mensagem(page, "Produto não encontrado", ft.Colors.RED)
+            return
+
+        if quantidade > produto[3]:
+            mostrar_mensagem(
+                page, "Quantidade indisponível em estoque", ft.Colors.RED)
+            return
+
+        item_existente = next(
+            (i for i in state.carrinho if i['codigo'] == codigo), None)
+
+        if item_existente:
+            item_existente['quantidade'] += quantidade
+            item_existente['subtotal'] = item_existente['preco'] * \
+                item_existente['quantidade']
+        else:
+            state.carrinho.append({
+                'codigo': codigo,
+                'nome': produto[1],
+                'preco': produto[2],
+                'quantidade': quantidade,
+                'subtotal': produto[2] * quantidade
+            })
+
+        atualizar_estoque_db(codigo, -quantidade)
+        atualizar_carrinho()
+        atualizar_tabela_produtos()
+        mostrar_mensagem(page, "🛒 Produto adicionado ao carrinho!")
+        quantidade_compra.value = "1"
+        seletor_produto.focus()
+        page.update()
+
+    def atualizar_carrinho():
+        """Atualiza la exibição do carrinho com tabela e total alinhado"""
+
+        tabela = []
+
+        # Cabeçalho
+        tabela.append(
+            ft.Row([
+                ft.Text("Produto", weight=ft.FontWeight.BOLD,
+                        size=20, expand=2),
+                ft.Text("Qtde", weight=ft.FontWeight.BOLD, size=20, expand=1),
+                ft.Text("Preço un", weight=ft.FontWeight.BOLD,
+                        size=20, expand=1),
+                ft.Text("Subtotal", weight=ft.FontWeight.BOLD,
+                        size=20, expand=1),
+                ft.Text("", expand=1)
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        )
+
+        # Linhas com produtos
+        for item in state.carrinho:
+            tabela.append(
+                ft.Row([
+                    ft.Text(item['nome'], size=20, expand=2),
+                    ft.Text(str(item['quantidade']), size=20, expand=1),
+                    ft.Text(f"R$ {item['preco']:.2f}", size=20, expand=1),
+                    ft.Text(f"R$ {item['subtotal']:.2f}",
+                            size=20, expand=1, color=ft.Colors.GREEN),
+                    ft.IconButton(
+                        icon=ft.Icons.DELETE,
+                        icon_color=ft.Colors.RED_700,
+                        tooltip="Remover",
+                        on_click=lambda e, cod=item['codigo']: remover_do_carrinho(
+                            cod)
+                    )
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+            )
+
+        # Calcula o total
+        total = sum(item['subtotal'] for item in state.carrinho)
+
+        # Atualiza visual do card e do total alinhado
+        itens_carrinho.controls = [
+            ft.Card(
+                content=ft.Container(
+                    content=ft.Column(tabela, spacing=15),
+                    padding=10,
+                    bgcolor=ft.Colors.GREY_100,
+                    border_radius=8
+
+                ),
+                elevation=2,
+                margin=ft.margin.symmetric(vertical=5)
+            ),
+            ft.Row(  # total alinhado com a coluna "Subtotal"
+                controls=[
+                    ft.Container(
+                        content=ft.Text(
+                            f"Total: R$ {total:.2f}", size=25, weight=ft.FontWeight.BOLD),
+                        alignment=ft.alignment.center_right,
+                        expand=True
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.END
+            )
+        ]
+
+        # opcional se tiver visível fora do card
+        total_carrinho.value = f"R$ {total:.2f}"
+        page.update()
+
+    def remover_do_carrinho(codigo):
+        """Remove item do carrinho"""
+        item = next((i for i in state.carrinho if i['codigo'] == codigo), None)
+        if item:
+            atualizar_estoque_db(codigo, item['quantidade'])
+            state.carrinho.remove(item)
+            atualizar_carrinho()
+            atualizar_tabela_produtos()
+            mostrar_mensagem(page, "❌ Item removido do carrinho")
+
+    def limpar_carrinho(e):
+        """Limpa todos os itens do carrinho"""
+        if not state.carrinho:
+            return
+
+        def limpar():
+            for item in state.carrinho:
+                atualizar_estoque_db(item['codigo'], item['quantidade'])
+            state.carrinho.clear()
+            atualizar_carrinho()
+            atualizar_tabela_produtos()
+            mostrar_mensagem(page, "🔄 Carrinho limpo")
+
+        confirmar_acao(
+            page, "Tem certeza que deseja limpar o carrinho?", limpar)
+
+    # ==============================================================
+    # MODAL DE CHECKOUT
+    # ==============================================================
+
+    checkout_itens = ft.Column(scroll=ft.ScrollMode.AUTO)
+    checkout_total = ft.Text("R$ 0,00", size=25, weight=ft.FontWeight.BOLD)
+    valor_recebido = ft.TextField(
+        label="Valor Recebido",
+        prefix_text="R$ ",
+        visible=False,
+        on_change=calcular_troco,
+        border_color=ft.Colors.BLUE_700
+    )
+    troco = ft.Text("Troco: R$ 0,00", visible=False,
+                    size=25, weight=ft.FontWeight.BOLD)
+    forma_pagamento = ft.Dropdown(
+        label="Forma de Pagamento",
+        options=[
+            ft.dropdown.Option("dinheiro", "Dinheiro"),
+            ft.dropdown.Option("cartao", "Cartão"),
+            ft.dropdown.Option("pix", "PIX"),
+        ],
+        value="dinheiro",
+        on_change=atualizar_forma_pagamento,
+        border_color=ft.Colors.BLUE_700
+    )
+
+    def abrir_checkout(e):
+        page.add(modal_checkout)
+        """Abre o modal de finalização de compra"""
+        if not state.carrinho:
+            mostrar_mensagem(page, "Carrinho vazio", ft.Colors.RED)
+            return
+
+        checkout_itens.controls.clear()
+
+        for item in state.carrinho:
+            checkout_itens.controls.append(
+                ft.Row([
+                    ft.Text(f"{item['nome']} x{item['quantidade']}"),
+                    ft.Text(f"R$ {item['subtotal']:.2f}",
+                            color=ft.Colors.GREEN)
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+            )
+
+        total = sum(item['subtotal'] for item in state.carrinho)
+        checkout_total.value = f"R$ {total:.2f}"
+
+        valor_recebido.value = ""
+        forma_pagamento.value = "dinheiro"
+        valor_recebido.visible = False
+        troco.visible = False
+
+        page.dialog = modal_checkout
+        modal_checkout.open = True
+        page.update()
+
+    def finalizar_compra(e):
+        """Finaliza a venda e registra no banco de dados"""
+        try:
+            forma_pgto = forma_pagamento.value
+            total = sum(item['subtotal'] for item in state.carrinho)
+
+            if forma_pgto == "dinheiro":
+                try:
+                    valor_pago = float(valor_recebido.value)
+                    if valor_pago < total:
+                        mostrar_mensagem(
+                            page, "Valor insuficiente!", ft.Colors.RED)
+                        return
+                    troco_valor = valor_pago - total
+                except ValueError:
+                    mostrar_mensagem(
+                        page, "Digite um valor válido!", ft.Colors.RED)
+                    return
+            else:
+                troco_valor = 0.0
+                valor_pago = total
+
+            venda = {
+                'data_venda': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'total': total,
+                'forma_pagamento': forma_pgto,
+                'valor_recebido': valor_pago if forma_pgto == "dinheiro" else None,
+                'troco': troco_valor if forma_pgto == "dinheiro" else None
+            }
+
+            venda_id = registrar_venda_db(venda, state.carrinho)
+            state.carrinho.clear()
+            atualizar_carrinho()
+            modal_checkout.open = False
+            atualizar_tabela_produtos()
+
+            # ATUALIZA OS GRÁFICOS APÓS VENDA
+            state.dashboard.atualizar_tudo()
+
+            msg = f"✅ Venda 🛒{venda_id} finalizada com sucesso!"
+            if forma_pgto == "dinheiro":
+                msg += f" Troco: R$ {troco_valor:.2f}"
+
+            success_vendas_text.value = msg
+            page.update()
+
+            # Limpa mensagem após 5 segundos
+            async def clear_success():
+                await asyncio.sleep(5)
+                success_vendas_text.value = ""
+                page.update()
+            page.run_task(clear_success)
+
+        except Exception as ex:
+            mostrar_mensagem(
+                page, f"Erro ao finalizar venda: {str(ex)}", ft.Colors.RED)
+            traceback.print_exc()
+
+    def fechar_modal_checkout(e=None):
+        """Fecha o modal de checkout"""
+        modal_checkout.open = False
+        page.update()
+
+    # ==============================================================
+    # NAVEGAÇÃO ENTRE PÁGINAS
+    # ==============================================================
+
+    resultado_area = ft.Column(expand=True)
+
+    def carregar_vendas(e):
+        resultado_area.controls.clear()
+        data_escolhida = e.control.value.strftime("%Y-%m-%d")
+        dados = obter_vendas_por_dia(data_escolhida)
+        if not dados:
+            resultado_area.controls.append(
+                ft.Text(f"Nenhuma venda em {data_escolhida}", color="red")
+            )
+        else:
+            tabela = criar_tabela_vendas(dados)
+            grafico = criar_grafico_vendas(dados)
+            resultado_area.controls.append(
+                ft.Text(f"📆 Vendas de {data_escolhida}",
+                        size=20, weight="bold", color=TEXT_COLOR)
+            )
+            resultado_area.controls.append(
+                ft.Row([tabela, grafico], expand=True))
+        page.update()
+
+    seletor_data = ft.DatePicker(
+        on_change=carregar_vendas,
+        first_date=date(2025, 1, 1),
+        last_date=date.today(),
+        value=date.today()
+    )
+    page.overlay.append(seletor_data)
+    botao_data = ft.ElevatedButton(
+        "📅 Escolher data", on_click=lambda e: page.open(seletor_data), color=ft.Colors.WHITE, bgcolor=PRIMARY_COLOR
+    )
+
+    def cadastrar_produto_pagina(e):
+        """Navega para a página de cadastro de produtos"""
+        page.clean()
+        page.add(header)
+        page.add(linhacadastros)
+        page.add(botao_voltar)
+        page.update()
+
+    def voltar_pagina_inicial(e):
+        """Volta para a página inicial"""
+        page.clean()
+        page.add(header, success_vendas_text)
+
+        page.add(ft.Row([
+            ft.Column([secao_carrinho, form_busca,
+                      Botao_pagina_cadastro], expand=2)
+
+        ], expand=True))
+        page.update()
+
+    def mostrar_relatorios(e):
+        """Navega para a página de relatórios"""
+        page.clean()
+        page.add(header)
+
+        # Atualiza os gráficos antes de mostrar
+        state.dashboard.atualizar_tudo()
+
+        # ---- LAYOUT ----
+        page.add(
+            ft.Text("📊 Dashboard de Vendas", size=30,
+                    weight="bold", color=PRIMARY_COLOR),
+            state.dashboard.cards,
+            ft.Row([state.dashboard.grafico_pizza,
+                    state.dashboard.grafico_linha], expand=True),
+            state.dashboard.grafico_linha_pagamento,
+            state.dashboard.grafico_barras,
+            ft.Divider(),
+
+            state.dashboard.criar_grafico_estoque(),
+            ft.Divider(),
+            ft.Text("📆 Relatório por Data", size=25,
+                    weight="bold", color=TEXT_COLOR),
+            ft.Row([botao_data]),
+            resultado_area
+        )
+
+        page.add(botao_voltar)
+        page.update()
+
+    # ==============================================================
+    # DEFINIÇÃO DOS COMPONENTES DE INTERFACE
+    # ==============================================================
+
+    # Modal de checkout
+    modal_checkout = ft.AlertDialog(
+        modal=True,
+        title=ft.Text(
+            "FINALIZAR COMPRA",
+            size=24,
+            weight=ft.FontWeight.BOLD,
+            text_align=ft.TextAlign.CENTER,
+            color=ft.Colors.BLUE_800
+        ),
+        content=ft.Container(
+            content=ft.Column(
+                [
+                    ft.Text(
+                        "ITENS DO CARRINHO",
+                        size=15,
+                        weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER,
+                        color=ft.Colors.BLUE_700
+                    ),
+                    ft.Divider(height=2, thickness=2,
+                               color=ft.Colors.BLUE_100),
+                    checkout_itens,
+                    ft.Divider(height=2, thickness=2,
+                               color=ft.Colors.BLUE_100),
+                    ft.Row(
+                        [
+                            ft.Text(
+                                "TOTAL:",
+                                size=20,
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.BLUE_700
+                            ),
+                            checkout_total
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    ),
+                    ft.Container(forma_pagamento,
+                                 padding=ft.padding.symmetric(vertical=10)),
+                    ft.Container(valor_recebido,
+                                 padding=ft.padding.only(bottom=10)),
+                    troco
+                ],
+                tight=True,
+                scroll=ft.ScrollMode.AUTO,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            ),
+            width=600,
+            padding=ft.padding.symmetric(horizontal=30, vertical=20),
+        ),
+        shape=ft.RoundedRectangleBorder(radius=15),
+        actions=[
+            ft.TextButton(
+                "CONFIRMAR",
+                style=ft.ButtonStyle(
+                    bgcolor=ft.Colors.GREEN_700,
+                    color=ft.Colors.WHITE,
+                    padding=ft.padding.symmetric(horizontal=30, vertical=15),
+                    shape=ft.RoundedRectangleBorder(radius=10)
+                ),
+                on_click=finalizar_compra
+            ),
+            ft.TextButton(
+                "CANCELAR",
+                style=ft.ButtonStyle(
+                    bgcolor=ft.Colors.RED_700,
+                    color=ft.Colors.WHITE,
+                    padding=ft.padding.symmetric(horizontal=30, vertical=15),
+                    shape=ft.RoundedRectangleBorder(radius=10)
+                ),
+                on_click=fechar_modal_checkout
+            )
+        ],
+        actions_alignment=ft.MainAxisAlignment.SPACE_EVENLY
+    )
+
+    page.add(modal_checkout)
+
+    # Modal de produto
+    modal_produto = ft.AlertDialog(
+        modal=True,
+        title=ft.Text("Detalhes do Produto", weight=ft.FontWeight.BOLD),
+        content=ft.Column([
+            ft.Row(
+                [ft.Text("Código:", weight=ft.FontWeight.BOLD, size=20), modal_codigo]),
+            ft.Row([ft.Text("Nome:", weight=ft.FontWeight.BOLD), modal_nome]),
+            ft.Row([ft.Text("Preço:", weight=ft.FontWeight.BOLD), modal_preco]),
+            ft.Row([ft.Text("Estoque:", weight=ft.FontWeight.BOLD), modal_estoque]),
+            ft.Row(
+                [ft.Text("Categoria:", weight=ft.FontWeight.BOLD), modal_categoria]),
+            ft.Row(
+                [ft.Text("Descrição:", weight=ft.FontWeight.BOLD), modal_descricao]),
+            ft.Container(content=modal_image, alignment=ft.alignment.center)
+        ], tight=True, spacing=10),
+        actions=[
+            ft.TextButton("Editar", on_click=editar_produto_modal,
+                          style=ft.ButtonStyle(color=ft.Colors.BLUE_700)),
+            ft.TextButton("Excluir",
+                          style=ft.ButtonStyle(color=ft.Colors.RED_700)),
+            ft.TextButton("Fechar", on_click=fechar_modal,
+                          style=ft.ButtonStyle(color=ft.Colors.GREY_700))
+        ],
+        actions_alignment=ft.MainAxisAlignment.END
+    )
+
+    # Componentes do formulário de cadastro
+    codigo_produto = ft.TextField(
+        label="Código do Produto",
+        width=300,
+        autofocus=True,
+        border_color=ft.Colors.BLUE_700,
+        prefix_icon=ft.Icons.LABEL
+
+
+    )
+    nome_produto = ft.TextField(
+        label="Nome do Produto",
+        width=300,
+        border_color=ft.Colors.BLUE_700,
+        prefix_icon=ft.Icons.LABEL
+    )
+    preco_produto = ft.TextField(
+        label="Preço Unitário (R$)",
+        width=300,
+        prefix_text="R$ ",
+        border_color=ft.Colors.BLUE_700,
+        prefix_icon=ft.Icons.ATTACH_MONEY
+    )
+    quantidade_produto = ft.TextField(
+        label="Quantidade em Estoque",
+        width=300,
+        border_color=ft.Colors.BLUE_700,
+        prefix_icon=ft.Icons.INVENTORY
+    )
+    categoria_produto = ft.Dropdown(
+        label="Categoria",
+        options=[
+            ft.dropdown.Option("cosmeticos", "Cosméticos"),
+            ft.dropdown.Option("perfumes", "Perfumes"),
+            ft.dropdown.Option("cestas", "Cestas"),
+            ft.dropdown.Option("higiene", "Higiene"),
+            ft.dropdown.Option("outros", "Outros"),
+        ],
+        width=300,
+        border_color=ft.Colors.BLUE_700
+    )
+    descricao_produto = ft.TextField(
+        label="Descrição",
+        multiline=True,
+        min_lines=2,
+        width=300,
+        border_color=ft.Colors.BLUE_700,
+    )
+
+    # Seção de busca
+    campo_busca = ft.TextField(
+        label="Buscar Produto",
+        width=300,
+        suffix_icon=ft.Icons.SEARCH,
+        on_submit=buscar_produto,
+        border_color=ft.Colors.BLUE_700
+    )
+
+    resultados_busca = ft.Column(
+        spacing=5, scroll=ft.ScrollMode.AUTO, height=150)
+
+    # Seção de carrinho
+    seletor_produto = ft.Dropdown(
+        label="Produto",
+        width=300,
+        options=[],
+        border_color=ft.Colors.BLUE_700,
+        leading_icon=ft.Icons.SHOPPING_BAG
+    )
+    quantidade_compra = ft.TextField(
+        label="Quantidade",
+        value="1",
+        width=300,
+        border_color=ft.Colors.BLUE_700
+    )
+    itens_carrinho = ft.Column(
+        spacing=5, scroll=ft.ScrollMode.AUTO, height=150)
+    total_carrinho = ft.Text("R$ 0,00", size=40, weight=ft.FontWeight.BOLD)
+
+    # Tabela de produtos
+    tabela_produtos = ft.DataTable(
+        columns=[
+            ft.DataColumn(ft.Text("Código", weight=ft.FontWeight.BOLD)),
+            ft.DataColumn(ft.Text("Nome", weight=ft.FontWeight.BOLD)),
+            ft.DataColumn(ft.Text("Preço", weight=ft.FontWeight.BOLD)),
+            ft.DataColumn(ft.Text("Estoque", weight=ft.FontWeight.BOLD)),
+            ft.DataColumn(ft.Text("Categoria", weight=ft.FontWeight.BOLD)),
+            ft.DataColumn(ft.Text("Ações", weight=ft.FontWeight.BOLD)),
+        ],
+        rows=[],
+        width=1100,
+        heading_row_color=ft.Colors.BLUE_50,
+        column_spacing=20
+    )
+
+    # Mensagens
+    success_vendas_text = ft.Text(size=25, color=ft.Colors.GREEN)
+    success_salvar_text = ft.Text(size=20, color=ft.Colors.GREEN)
+    nao_salva = ft.Text(size=20, color=ft.Colors.RED_700)
+
+    # ==============================================================
+    # LAYOUT PRINCIPAL
+    # ==============================================================
+
+    # Cabeçalho
+
+    # Logo
+    logo_image = ft.Image(
+        src="logo (2).png",
+        height=120,
+        fit=ft.ImageFit.CONTAIN
+    )
+
+    logo_container = ft.Container(
+        content=logo_image,
+        padding=ft.padding.only(right=15)
+    )
+    # Textos
+    title_text = ft.Text(
+        "GRAÇA PRESENTES",
+        size=30,
+        weight=ft.FontWeight.W_800,
+        color=ft.Colors.WHITE
+    )
+
+    description_text = ft.Text(
+        "Sistema de gerenciamento de produtos",
+        size=16,
+        color=ft.Colors.WHITE70
+    )
+
+    texts_column = ft.Column(
+        [title_text, description_text],
+        alignment=ft.MainAxisAlignment.CENTER,
+        spacing=3
+    )
+    # Botões
+    relatorios_button = ft.IconButton(
+        icon=ft.Icons.INSERT_CHART_OUTLINED_SHARP,
+        icon_size=40,
+        icon_color=ft.Colors.WHITE,
+        tooltip="Relatórios",
+        on_click=mostrar_relatorios,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=10),
+            padding=15,
+            overlay_color="#0F0904FF"  # Branco com 10% de opacidade
+        )
+    )
+
+    checkout_button = ft.IconButton(
+        icon=ft.Icons.SHOPPING_CART_CHECKOUT_OUTLINED,
+        icon_size=40,
+        icon_color=ft.Colors.WHITE,
+        tooltip="Finalizar Compra",
+        on_click=abrir_checkout,
+        style=ft.ButtonStyle(
+            shape=ft.RoundedRectangleBorder(radius=10),
+            padding=15,
+            overlay_color="#0E7676FF"  # Branco com 10% de opacidade
+        )
+    )
+
+    buttons_row = ft.Row(
+        [relatorios_button, checkout_button],
+        spacing=15,
+        alignment=ft.MainAxisAlignment.END
+    )
+    # Área da Logo + Texto
+    logo_and_text_row = ft.Row(
+        [
+            logo_container,
+            texts_column
+        ],
+        alignment=ft.MainAxisAlignment.START,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        expand=True
+    )
+
+    # Cabeçalho
+    header = ft.Container(
+        content=ft.Row(
+            [
+                logo_and_text_row,
+                buttons_row
+            ],
+            alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        padding=ft.padding.symmetric(horizontal=30, vertical=15),
+
+        margin=ft.margin.only(bottom=25),
+        gradient=ft.LinearGradient(
+            begin=ft.alignment.top_left,
+            end=ft.alignment.bottom_right,
+            colors=["#E30D78", "#0DEA83", "#c8ccdedc"]
+        ),
+        shadow=ft.BoxShadow(
+            spread_radius=1,
+            blur_radius=20,
+            color="#800d47a1",
+            offset=ft.Offset(0, 6)
+        ),
+        height=110
+
+
+    )
+
+# Formulário de cadastro
+    form_cadastro = ft.Container(
+        width=400,
+        content=ft.Column(
+            [
+                ft.Container(
+                    content=ft.Text("Cadastro de Produtos",
+                                    size=20, weight=ft.FontWeight.BOLD),
+                    padding=10
+                ),
+                ft.Divider(),
+                codigo_produto,
+                nome_produto,
+                preco_produto,
+                quantidade_produto,
+                categoria_produto,
+                descricao_produto,
+                ft.Container(
+                    content=ft.Column([
+                        ft.ElevatedButton(
+                            "Escolher Imagem",
+                            on_click=pick_files,
+                            icon=ft.Icons.IMAGE,
+                            style=ft.ButtonStyle(
+                                bgcolor=ft.Colors.BLUE_700,
+                                color=ft.Colors.WHITE
+                            )
+                        ),
+                        image_preview
+                    ], spacing=10),
+                    padding=10,
+                    alignment=ft.alignment.center
+                ),
+                ft.Row(
+                    [
+                        ft.ElevatedButton(
+                            "Limpar",
+                            icon=ft.Icons.CLEAR,
+                            on_click=limpar_formulario,
+                            style=ft.ButtonStyle(
+                                bgcolor=ft.Colors.GREY_300,
+                                color=ft.Colors.BLACK
+                            )
+                        ),
+                        ft.ElevatedButton(
+                            "Salvar",
+                            icon=ft.Icons.SAVE,
+                            on_click=cadastrar_produto,
+                            style=ft.ButtonStyle(
+                                bgcolor=ft.Colors.BLUE_700,
+                                color=ft.Colors.WHITE
+                            )
+                        )
+                    ],
+                    spacing=10,
+                    alignment=ft.MainAxisAlignment.END
+                ), ft.Row([success_salvar_text, nao_salva])
+            ],
+            scroll=ft.ScrollMode.AUTO
+        ),
+        padding=10,
+        margin=ft.margin.only(right=20),
+        border=ft.border.all(1, ft.Colors.GREY_300),
+        border_radius=10
+    )
+
+    # Busca de produtos
+    form_busca = ft.Container(
+        content=ft.Column([
+            ft.Text("Buscar Produtos", size=20, weight=ft.FontWeight.BOLD),
+            ft.Divider(),
+            campo_busca,
+            ft.ElevatedButton(
+                "Buscar",
+                icon=ft.Icons.SEARCH,
+                on_click=buscar_produto,
+                width=300,
+                style=ft.ButtonStyle(
+                    bgcolor=ft.Colors.BLUE_700,
+                    color=ft.Colors.WHITE
+                )
+            ),
+            ft.Container(
+                content=resultados_busca,
+                border=ft.border.all(1, ft.Colors.GREY_300),
+                border_radius=5,
+                padding=10,
+                height=300
+            ),
+            ft.Container(
+                content=busca_image_preview,
+                alignment=ft.alignment.center,
+                padding=10
+            )
+        ]),
+        padding=10,
+        border=ft.border.all(1, ft.Colors.GREY_300),
+        border_radius=10
+    )
+
+    # Carrinho de compras
+    secao_carrinho = ft.Container(
+        content=ft.Column(
+            [
+                ft.Container(
+                    content=ft.Text("Carrinho de Compras", size=20,
+                                    weight=ft.FontWeight.BOLD),
+                    padding=10
+                ),
+                ft.Divider(),
+                ft.Row([
+                    seletor_produto,
+                    quantidade_compra,
+                    ft.ElevatedButton(
+                        "Adicionar",
+                        icon=ft.Icons.ADD,
+                        on_click=adicionar_ao_carrinho,
+                        style=ft.ButtonStyle(
+                            bgcolor=ft.Colors.GREEN_700,
+                            color=ft.Colors.WHITE,
+                            padding=10
+                        )
+                    )
+                ], spacing=10),
+                ft.Container(
+                    content=itens_carrinho,
+                    border=ft.border.all(1, ft.Colors.GREY_300),
+                    border_radius=5,
+                    padding=10,
+                    height=250
+                ),
+
+                ft.Row(
+                    [
+                        ft.ElevatedButton(
+                            "Limpar",
+                            icon=ft.Icons.DELETE,
+                            on_click=limpar_carrinho,
+                            style=ft.ButtonStyle(
+                                bgcolor=ft.Colors.RED_700,
+                                color=ft.Colors.WHITE
+                            )
+                        ),
+                        ft.ElevatedButton(
+                            "Finalizar",
+                            icon=ft.Icons.CHECK_CIRCLE_OUTLINE,
+                            on_click=abrir_checkout,
+                            style=ft.ButtonStyle(
+                                bgcolor=ft.Colors.ORANGE_700,
+                                color=ft.Colors.WHITE
+                            )
+                        )
+                    ],
+                    spacing=10,
+                    alignment=ft.MainAxisAlignment.END
+                )
+            ]
+        ),
+        padding=10,
+        border=ft.border.all(1, ft.Colors.GREY_300),
+        border_radius=10
+    )
+
+    # Produtos cadastrados
+    secao_produtos = ft.Container(
+        content=ft.Column(
+            [
+                ft.Container(
+                    content=ft.Text("Produtos Cadastrados", size=20,
+                                    weight=ft.FontWeight.BOLD),
+                    padding=10
+                ),
+                ft.Divider(),
+                ft.Container(
+                    content=tabela_produtos,
+                    border=ft.border.all(1, ft.Colors.GREY_300),
+                    border_radius=5,
+                    padding=10,
+                    expand=True
+                )
+            ],
+            expand=True
+        ),
+        padding=10,
+        border=ft.border.all(1, ft.Colors.GREY_300),
+        border_radius=10,
+        expand=True
+    )
+
+    # Botões de navegação
+    Botao_pagina_cadastro = ft.ElevatedButton(
+        "Cadastrar Produtos",
+        icon=ft.Icons.ADD_BOX,
+        on_click=cadastrar_produto_pagina,
+        style=ft.ButtonStyle(
+            bgcolor=ft.Colors.BLUE_700,
+            color=ft.Colors.WHITE,
+            padding=20
+        ),
+        height=50,
+        width=200
+    )
+
+    botao_voltar = ft.ElevatedButton(
+        "Voltar Página Inicial",
+        icon=ft.Icons.ARROW_BACK,
+        on_click=voltar_pagina_inicial,
+        style=ft.ButtonStyle(
+            bgcolor=ft.Colors.GREY_700,
+            color=ft.Colors.WHITE,
+            padding=10
+
+
+        ),
+        height=50,
+        width=200
+    )
+
+    # ==============================================================
+    # INICIALIZAÇÃO DA APLICAÇÃO
+    # ==============================================================
+
+    # Monta a página inicial
+    linhacadastros = ft.Row(controls=[form_cadastro, secao_produtos], alignment=ft.MainAxisAlignment.START,
+                            vertical_alignment=ft.CrossAxisAlignment.START, spacing=20)
+
+    page.add(header)
+    page.add(success_vendas_text)
+    page.update()
+    page.add(ft.Row([
+        ft.Column([secao_carrinho, form_busca, image_preview,
+                  busca_image_preview, Botao_pagina_cadastro], expand=2)
+
+    ], expand=True))
+
+    # Inicialização
+
+    atualizar_tabela_produtos()
+    atualizar_seletor_produtos()
+    page.update()
+
+
+if __name__ == "__main__":
+    criar_banco()
+
+    ft.app(target=main)
