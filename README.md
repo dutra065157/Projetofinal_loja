@@ -6,7 +6,7 @@
  ![Tela do App](https://github.com/dutra065157/APP-Mobile-REST-API-para-Gestao-de-Alunos/blob/b08d787a1485e4f9eb2ec44d75c616e785c3dd2d/assets/image1.png)
 
 
-![Tela do App](assets/[image2.png](https://github.com/dutra065157/Projetofinal_loja/blob/main/assets/Captura%20de%20tela%202025-10-19%20004602.png))
+![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004602.png)
 ![Tela do App](assets/image3.png)
 ![Tela do App](assets/image4.png)
 ![Tela do App](assets/image5.png)
