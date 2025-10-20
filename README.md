@@ -1,4 +1,4 @@
-## 🛍️ GRAÇA PRESENTES - Sistema de Vendas e Estoque##
+## 🛍️ GRAÇA PRESENTES - Sistema de Vendas e Estoque
 
 **🚀 _Sistema integrado com back-end e frontend mobile (Flet)_**
 
