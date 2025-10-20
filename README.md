@@ -68,8 +68,6 @@ Exibição de imagens dos produtos, Listagem de produtos cadastrados
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004301.png)
 
-Vendas por data específica, Relatório por produto com quantidades vendidas, Total de produtos vendidos por período
-Análise de desempenho por categoria
 
 📈 RELATÓRIOS POR DATA
 
