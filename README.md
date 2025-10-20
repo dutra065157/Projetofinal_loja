@@ -18,27 +18,27 @@ O GRAÇA PRESENTES é um sistema desktop desenvolvido em Python com interface es
 
 ### 🎯 CARACTERÍSTICAS PRINCIPAIS
 
-       🖥️ APLICATIVO DESKTOP 
+    🖥️ APLICATIVO DESKTOP 
       
-       💰 SISTEMA COMPLETO DE VENDAS
+    💰 SISTEMA COMPLETO DE VENDAS
       
-       📊 CONTROLE DE ESTOQUE EM TEMPO REAL
+    📊 CONTROLE DE ESTOQUE EM TEMPO REAL
       
-       📈 DASHBOARD COM ANALYTICS
+    📈 DASHBOARD COM ANALYTICS
       
-       🏷️ CADASTRO DE PRODUTOS COM IMAGENS
+    🏷️ CADASTRO DE PRODUTOS COM IMAGENS
       
-       📋 RELATÓRIOS DETALHADOS
+    📋 RELATÓRIOS DETALHADOS
 
-### 🛠️ TECNOLOGIAS UTILIZADAS
+###🛠️ TECNOLOGIAS UTILIZADAS
 
-      **Python	Linguagem principal**
+   **Python	Linguagem principal**
       
-      **Flet	Framework para interface**
+   **Flet	Framework para interface**
       
-      **Pandas	Análise e processamento de dados**
+   **Pandas	Análise e processamento de dados**
       
-      **PyInstaller	Empacotamento para desktop**
+   **PyInstaller	Empacotamento para desktop**
 
 ### 🎯TELAS DO SISTEMA
 
