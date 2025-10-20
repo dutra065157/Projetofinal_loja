@@ -18,19 +18,19 @@ O GRAÇA PRESENTES é um sistema desktop desenvolvido em Python com interface es
 
 ### 🎯 CARACTERÍSTICAS PRINCIPAIS
 
-# 🖥️ APLICATIVO DESKTOP 
+ 🖥️ APLICATIVO DESKTOP 
 
-# 💰 SISTEMA COMPLETO DE VENDAS
+ 💰 SISTEMA COMPLETO DE VENDAS
 
-# 📊 CONTROLE DE ESTOQUE EM TEMPO REAL
+ 📊 CONTROLE DE ESTOQUE EM TEMPO REAL
 
-# 📈 DASHBOARD COM ANALYTICS
+ 📈 DASHBOARD COM ANALYTICS
 
-# 🏷️ CADASTRO DE PRODUTOS COM IMAGENS
+ 🏷️ CADASTRO DE PRODUTOS COM IMAGENS
 
-# 📋 RELATÓRIOS DETALHADOS
+ 📋 RELATÓRIOS DETALHADOS
 
-## 🛠️ TECNOLOGIAS UTILIZADAS
+### 🛠️ TECNOLOGIAS UTILIZADAS
 
 **Python	Linguagem principal**
 
@@ -40,39 +40,39 @@ O GRAÇA PRESENTES é um sistema desktop desenvolvido em Python com interface es
 
 **PyInstaller	Empacotamento para desktop**
 
-# 🎯 TELAS DO SISTEMA
+### 🎯 TELAS DO SISTEMA
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003701.png)
 
-# 🛒 Sistema de Vendas
+ 🛒 Sistema de Vendas
 Carrinho de Compras com seleção de produtos,  Cálculo automático de valores e totais,  Sistema de troco para pagamento em dinheiro,
 Finalização de compra com atualização automática do estoque
 
-# 💰 FINALIZAÇÃO DE VENDA
+ 💰 FINALIZAÇÃO DE VENDA
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20003842.png)
 
-# 📝 CADASTRO DE PRODUTOS
+ 📝 CADASTRO DE PRODUTOS
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004036.png)
 
 Cadastro completo de produtos (código, nome, preço, estoque, categoria), Busca e seleção de produtos
 Exibição de imagens dos produtos, Listagem de produtos cadastrados
 
-# 📈 RELATÓRIOS 
+ 📈 RELATÓRIOS 
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004215.png)
 
-# 📊 RELATÓRIOS 
+ 📊 RELATÓRIOS 
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004301.png)
 
 
-# 📈 RELATÓRIOS POR DATA
+ 📈 RELATÓRIOS POR DATA
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004504.png)
 
-# 📈 RELATÓRIOS 
+ 📈 RELATÓRIOS 
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004602.png)
 
@@ -86,21 +86,21 @@ Exibição de imagens dos produtos, Listagem de produtos cadastrados
   
 </p>
 
-## 💾Funcionalidades Técnicas
+ ### 💾Funcionalidades Técnicas
 
- # Banco de Dados
+  *Banco de Dados*
  
 - Armazenamento em arquivos CSV
 - Sincronização em tempo real
 - Backup automático de dados
   
-# Interface
+ *Interface*
 
 - Design responsivo para mobile
 - Navegação intuitiva entre telas
 - Feedback visual imediato
 
-# Business Logic
+ *Business Logic*
 
 - Atualização automática do estoque
 - Cálculo preciso de valores e trocos
