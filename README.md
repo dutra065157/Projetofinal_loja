@@ -16,7 +16,7 @@
 🌟 SOBRE O PROJETO
 O GRAÇA PRESENTES é um sistema desktop desenvolvido em Python com interface estilo mobile para gerenciamento completo de uma loja de presentes. O sistema oferece controle de vendas, estoque, cadastro de produtos e relatórios detalhados em uma interface otimizada para uso em computadores.
 
-# 🎯 CARACTERÍSTICAS PRINCIPAIS
+### 🎯 CARACTERÍSTICAS PRINCIPAIS
 
 # 🖥️ APLICATIVO DESKTOP 
 
