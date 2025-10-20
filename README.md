@@ -30,7 +30,7 @@ O GRAÇA PRESENTES é um sistema desktop desenvolvido em Python com interface es
       
     📋 RELATÓRIOS DETALHADOS
 
-###🛠️ TECNOLOGIAS UTILIZADAS
+### 🛠️ TECNOLOGIAS UTILIZADAS
 
    **Python	Linguagem principal**
       
