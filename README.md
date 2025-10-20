@@ -5,9 +5,7 @@
 <p align="center">
    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
    <img src="https://img.shields.io/badge/Flet-0078D4?style=for-the-badge&logo=flutter&logoColor=white">
-   <img src="https://img.shields.io/badge/Flet-0078D4?style=for-the-badge&logo=flutter&logoColor=white">
    <img src="https://img.shields.io/badge/Desktop-APP-4ECDC4?style=for-the-badge">
-   <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white">
    <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white">
 
 
@@ -18,6 +16,7 @@
 O GRAÇA PRESENTES é um sistema desktop desenvolvido em Python com interface estilo mobile para gerenciamento completo de uma loja de presentes. O sistema oferece controle de vendas, estoque, cadastro de produtos e relatórios detalhados em uma interface otimizada para uso em computadores.
 
 🎯 CARACTERÍSTICAS PRINCIPAIS
+
 🖥️ APLICATIVO DESKTOP com interface mobile-like
 
 💰 SISTEMA COMPLETO DE VENDAS
@@ -65,14 +64,14 @@ Exibição de imagens dos produtos, Listagem de produtos cadastrados
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004215.png)
 
-📊 RELATÓRIOS POR DATA
+📊 RELATÓRIOS 
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004301.png)
 
 Vendas por data específica, Relatório por produto com quantidades vendidas, Total de produtos vendidos por período
 Análise de desempenho por categoria
 
-📈 RELATÓRIOS 
+📈 RELATÓRIOS POR DATA
 
 ![Tela do App](assets/Captura%20de%20tela%202025-10-19%20004504.png)
 
