@@ -1,10 +1,11 @@
-##🛍️ GRAÇA PRESENTES - Sistema de Vendas e Estoque##
+## 🛍️ GRAÇA PRESENTES - Sistema de Vendas e Estoque##
 
 **🚀 _Sistema integrado com back-end e frontend mobile (Flet)_**
 
 <p align="center">
    <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white">
    <img src="https://img.shields.io/badge/Flet-0078D4?style=for-the-badge&logo=flutter&logoColor=white">
+   <img src="https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white">
    <img src="https://img.shields.io/badge/Desktop-APP-4ECDC4?style=for-the-badge">
    <img src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white">
 
@@ -87,19 +88,21 @@ Exibição de imagens dos produtos, Listagem de produtos cadastrados
   
 </p>
 
-##💾 Funcionalidades Técnicas
- #Banco de Dados
+## 💾Funcionalidades Técnicas
+
+ # Banco de Dados
+ 
 - Armazenamento em arquivos CSV
 - Sincronização em tempo real
 - Backup automático de dados
   
-#Interface
+# Interface
 
 - Design responsivo para mobile
 - Navegação intuitiva entre telas
 - Feedback visual imediato
 
-#Business Logic
+# Business Logic
 
 - Atualização automática do estoque
 - Cálculo preciso de valores e trocos
